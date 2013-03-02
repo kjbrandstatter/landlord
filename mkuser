@@ -1,0 +1,17 @@
+#!/bin/bash
+# mkuser <name> <full name> <expire-date>
+
+# Make user with home and random password?
+# default expire? 
+PASS=$( ./random-pass ) # randomize later
+ARGS="-m -s /bin/bash "
+if [ $3 ]; then
+	ARGS="$ARGS -e $3" #expire
+fi
+useradd $ARGS $1
+if [ $2 ]; then
+	usermod -c "$2" $1
+fi
+echo $PASS | tee $1 # store generated default password
+echo $1:$PASS | chpasswd
+passwd -e $1

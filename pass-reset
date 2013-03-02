@@ -1,0 +1,5 @@
+#!/bin/bash
+PASS=$( ./random-pass ) # randomize later
+echo $1:$PASS | chpasswd
+echo $PASS > $1
+passwd -e $1

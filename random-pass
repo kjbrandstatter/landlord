@@ -1,0 +1,8 @@
+#!/bin/bash
+
+CHARACTERS=( $(echo {0..9} {a..z} {A..Z}) )
+CHAR=$(echo {0..9} {a..z} {A..Z})
+for i in $CHAR; do
+	echo $i;
+done | shuf | head -8 | awk '{printf $1}'
+echo
