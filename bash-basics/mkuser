@@ -5,11 +5,11 @@
 # default expire? 
 PASS=$( ./random-pass ) # randomize later
 ARGS="-m -s /bin/bash "
-if [ $3 ]; then
+if [ "$3" ]; then
 	ARGS="$ARGS -e $3" #expire
 fi
 useradd $ARGS $1
-if [ $2 ]; then
+if [ "$2" ]; then
 	usermod -c "$2" $1
 fi
 echo $PASS | tee $1 # store generated default password
