@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-my $dbfile = 'database.db';      # your database file
 
 use Landlord::Utils;
 use Landlord::User;
@@ -13,76 +12,3 @@ if ($ARGV[0]){
 elsif (not -e $dbfile) {
    Landlord::Utils::init_db($dbfile);
 }
-
-sub refresh_info_from_system {
-   &refresh_users();
-   &refresh_groups();
-   &refresh_memberships();
-}
-
-# These functions are to verify consistency, they should be used very infrequently
-# They are currently inefficient, but i prefer inefficient if it guaruntees consistency
-# Ill continue to optimize to make them more efficient
-sub refresh_users {
-   my $sql_run = "create temp table tmpuser (".
-                 "id integer primary key, ".
-                 "username char(50) unique not null, ".
-                 "fullname char(50) not null, ".
-                 "email char(50),".
-                 "home char(50) not null," .
-                 "status integer not null,".
-                 "expire_date DATE not null); ";
-   open(PASSWD, "</etc/passwd");
-   for (<PASSWD>) {
-      chomp;
-      my @fields = split ":";
-      $fields[4] =~ m/(.*)(<.*>)?/;
-      my $email;
-      if ($2) { $email = $2; } else { $email = ""; }
-      my $name = $1;
-      if ($fields[2] >= 1000 and $fields[2] < 65534) {
-         $sql_run .= "INSERT INTO tmpuser".
-               "(id, username, fullname, email, home, status, expire_date) VALUES ".
-               "($fields[2], '$fields[0]', '$name', '$email', '$fields[5]', 1, date('now')); ";
-      }
-   }
-   close PASSWD;
-   $sql_run .= "insert into users select * from tmpuser where tmpuser.id not in (select id from users);";
-   $sql_run .= "delete from users where id in (select id from users except select id from tmpuser);";
-   Landlord::Utils::run_transaction($dbfile, $sql_run);
-}
-sub refresh_groups {
-   my $sql_run = "CREATE temp TABLE tmpgroups (id integer primary key, name char(50) not null, description char(200) );";
-   open(GROUPS, "</etc/group");
-   for (<GROUPS>) {
-      chomp;
-      my @gargs = split ':';
-      my @gu = split ',', $gargs[3] if $gargs[3];
-      if ($gargs[2] < 1000) {
-         $sql_run .= "INSERT INTO tmpgroups (id, name) VALUES($gargs[2], '$gargs[0]');";
-      }
-   }
-   $sql_run .= "INSERT INTO groups (id, name) select id,name from tmpgroups where id not in (select id from groups);";
-   close GROUPS;
-   Landlord::Utils::run_transaction($dbfile, $sql_run);
-}
-sub refresh_memberships {
-   my $sql_run = "CREATE temp table tmpmemb (user char(50), gid integer, primary key(user,gid));";
-   open(GROUPS, "</etc/group");
-   for (<GROUPS>) {
-      chomp;
-      my @gargs = split ':';
-      my @gu = split ',', $gargs[3] if $gargs[3];
-      for (@gu) {
-         $sql_run .= "INSERT INTO tmpmemb values ('$_', $gargs[2]);";
-      }
-   }
-   $sql_run .= "insert into group_memberships select users.id, tmpmemb.gid from users join tmpmemb on users.username = tmpmemb.user;";
-   close GROUPS;
-   Landlord::Utils::run_transaction($dbfile, $sql_run);
-}
-
-
-#&refresh_info_from_system();
-#Landlord::Utils::check_old($ARGV[0]);
-#Landlord::Utils::remove_archives();

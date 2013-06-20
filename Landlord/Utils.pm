@@ -6,6 +6,8 @@ use warnings;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 require Exporter;
+require DBI;
+
 @ISA = qw(Exporter AutoLoader);
 $VERSION = '0.01';
 
@@ -18,22 +20,20 @@ my $dbfile = "database.db"; # or read from config file etc.
 # Utility functions
 
 sub read_config_file {
+   #STUB
 }
 
 sub generate_password {
    my @letters = ('A'..'Z', 'a'..'z',0..9);
    my $pword = "";
-   my $length = $_[0];
-   for (1..$length) {
+   for (1..$_[0]) {
       $pword .= $letters[rand(@letters)];
    }
    return $pword;
 }
 
-use DBI;
 
 sub init_db {
-   my $dbh = &open_db($dbfile);
    my $drop = "drop table if exists group_memberships;".
          "drop table if exists archives;".
          "drop view if exists user_group; ".
@@ -104,22 +104,88 @@ sub sql_request {
    my $sth = $dbh->prepare($query);
    $sth->execute();
    my $rows = $sth->fetchall_arrayref();
-
    $dbh->disconnect();
    return $rows;
 }
 
 sub update_active_status {
    my ($time) = @_;
-   my @act;
+   my @active_users;
    open(ACTIVE, "lastlog -t $time |");
    for (<ACTIVE>) {
       m/^(\w+)/;
-      push @act, $1 if not $1 eq "Username";
+      push @active_users, $1 if not $1 eq "Username";
    }
    my $update = "update users set expire_date = DATE('now', '+6 month') ".
-                "where username in (" . join(",", @act) . ");";
+                "where username in (" . join(",", @active_users) . ");";
    &sql_modify($update);
+}
+
+sub refresh_database_info {
+   &refresh_users();
+   &refresh_groups();
+   &refresh_memberships();
+}
+
+# These functions are to verify consistency, they should be used very infrequently
+# They are currently inefficient, but i prefer inefficient if it guaruntees consistency
+# Ill continue to optimize to make them more efficient
+sub refresh_users {
+   my $query = "create temp table tmpuser (".
+                 "id integer primary key, ".
+                 "username char(50) unique not null, ".
+                 "fullname char(50) not null, ".
+                 "email char(50),".
+                 "home char(50) not null," .
+                 "status integer not null,".
+                 "expire_date DATE not null); ";
+   open(PASSWD, "</etc/passwd");
+   for (<PASSWD>) {
+      chomp;
+      my @fields = split ":";
+      $fields[4] =~ m/(.*)(<.*>)?/;
+      my $email = "";
+      $email = $2 if $2;
+      my $name = $1;
+      if ($fields[2] >= 1000 and $fields[2] < 65534) {
+         $query .= "INSERT INTO tmpuser".
+               "(id, username, fullname, email, home, status, expire_date) VALUES ".
+               "($fields[2], '$fields[0]', '$name', '$email', '$fields[5]', 1, date('now')); ";
+      }
+   }
+   close PASSWD;
+   $query .= "insert into users select * from tmpuser where tmpuser.id not in (select id from users);";
+   $query .= "delete from users where id in (select id from users except select id from tmpuser);";
+   &sql_modify($query);
+}
+sub refresh_groups {
+   my $query = "CREATE temp TABLE tmpgroups (id integer primary key, name char(50) not null, description char(200) );";
+   open(GROUPS, "</etc/group");
+   for (<GROUPS>) {
+      chomp;
+      my @fields = split ':';
+      if ($fields[2] < 1000) {
+         $query .= "INSERT INTO tmpgroups (id, name) VALUES($fields[2], '$fields[0]');";
+      }
+   }
+   $query .= "INSERT INTO groups (id, name) select id,name from tmpgroups where id not in (select id from groups);";
+   close GROUPS;
+   &sql_modify($query);
+}
+sub refresh_memberships {
+   my $query = "CREATE temp table tmpmemb (user char(50), gid integer, primary key(user,gid));";
+   open(GROUPS, "</etc/group");
+   for (<GROUPS>) {
+      chomp;
+      my @fields = split ':';
+      my @members = split ',', $fields[3] if $fields[3];
+      for (@members) {
+         $query .= "INSERT INTO tmpmemb values ('$_', $fields[2]);";
+      }
+   }
+   close GROUPS;
+   $query .= "insert into group_memberships select users.id, tmpmemb.gid from users join tmpmemb on users.username = tmpmemb.user;";
+   &sql_modify($query);
 }
 1
 __END__

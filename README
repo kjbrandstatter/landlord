@@ -24,6 +24,10 @@ Utils
    sql_modify
    sql_request
    update_active_status
+   refresh_database_info
+   refresh_users
+   refresh_groups
+   refresh_memberships
 
 landlord (unimplemented)
    givelease

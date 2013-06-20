@@ -1,7 +1,7 @@
 Core:
  * initialize db from passwd - working (could be improved)
 
- * write the actual table schemas - work in progress
+   improve the table schemas - work in progress
 
  * scan for activity and update database - postponed, possibly unecessary
 
@@ -9,15 +9,21 @@ Core:
 
  * sql request data function - done
 
+   incorporate system user expiration
+
+   per user defaults/create user options like shell etc
+
    Full Documentation (w/ perldoc)
 
    shadow database/ archive recovery with password
 
    configureable database name
    ***configuration file
+      how long till expire
+      how long till delete
+      how long till archives removed
 
    better consistency of names in functions
-
 
 Actions:
  * user insert (database) - working

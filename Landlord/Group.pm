@@ -14,17 +14,17 @@ $VERSION = '0.01';
 
 # Group Related functions
 sub add_group {
-   my ($gname, $desc) = @_;
+   my ($group, $description) = @_;
 
-   if (not $gname) { die "No group name given\n"; }
+   if (not $group) { die "No group name given\n"; }
    # Set the default options. We shall expand this later
    my $opts = "";
 
-   `groupadd $gname`;
+   `groupadd $group`;
    my $gid;
    open(GROUP, "</etc/group");
    for (<GROUP>){
-      if (m/^$gname:.*:(\d+)/){
+      if (m/^$group:.*:(\d+)/){
          $gid = $1;
          last;
       }
@@ -32,26 +32,25 @@ sub add_group {
    close GROUP;
 
    my $query;
-   if ($desc) {
+   if ($description) {
       $query = "INSERT INTO groups (id, name, description) ".
-         "VALUES ('$gid' , '$gname', '$desc')";
+         "VALUES ('$gid' , '$group', '$description')";
    }
    else {
-      $query = "INSERT INTO groups (id, name) VALUES ('$gid' , '$gname')";
+      $query = "INSERT INTO groups (id, name) VALUES ('$gid' , '$group')";
    }
 
    Landlord::Utils::sql_modify($query);
 }
 
 sub delete_group {
-   my ($gname) = @_;
-   if (not $gname) { die "No group name given\n"; }
+   my ($group) = @_;
+   if (not $group) { die "No group name given\n"; }
 
 
-   `groupdel $gname`;
+   `groupdel $group`;
 
-
-   my $query = "delete from groups where name == '$gname';";
+   my $query = "delete from groups where name == '$group';";
 
    Landlord::Utils::sql_modify($query);
 }
