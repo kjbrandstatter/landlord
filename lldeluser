@@ -1,9 +1,9 @@
 #!/usr/bin/perl
-# lldeluser username
+# lldelete_user username
 
-#use Unix::Passwd::File qw(delete_user);
+#use Unix::Passwd::File qw(delete_ete_user);
 #use File::Copy::Recursive "rcopy";
 
-use Landlord::landlord qw(deluser);
+use Landlord::User qw(delete_user);
 
-deluser(@ARGV);
+delete_user(@ARGV);

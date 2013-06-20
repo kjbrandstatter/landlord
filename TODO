@@ -1,39 +1,40 @@
-initialize db from passwd - working (could be improved)
+Core:
+ * initialize db from passwd - working (could be improved)
 
-write the actual table schemas - work in progress
-   remove home dir column?
+ * write the actual table schemas - work in progress
 
-user insert (database) - working
+ * scan for activity and update database - postponed, possibly unecessary
 
-user remove (database) - working
+ * scanning functions for expiring/archiving/deleting users - done
 
-scan for activity and update database - postponed, possibly unecessary
+ * sql request data function - done
 
-add to group - working
+   Full Documentation (w/ perldoc)
 
-remove from group - working
+   shadow database/ archive recovery with password
 
-scanning functions for expiring/archiving/deleting users - done
+   configureable database name
+   ***configuration file
 
-sql request data function - done
+   better consistency of names in functions
 
-wrap all funcionality into a console/cli application
 
-configureable database name
+Actions:
+ * user insert (database) - working
 
-data lookup functions (ie emails, name search etc)
+ * user remove (database) - working
 
-use ENV to store configuration variables like the database, and timeouts
+ * add to group - working
 
-better consistency of names in functions
+ * remove from group - working
 
-ie landlord do
-or llconsole  read commands and execute
+   data lookup functions (ie emails, name search etc)
 
-landlord supported commands
-   givelease or adduser
-   evict or deluser 
-   disband or delgroup
-   group or addgroup
-   put <user> in <group>
-   kick <user> from <group>
+System/Cron:
+   Cron files for auto running tasks
+
+Frontend:
+   wrap all funcionality into a console/cli application
+
+   ie landlord ACTION
+   or llconsole  read commands and execute

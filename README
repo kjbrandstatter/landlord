@@ -6,6 +6,7 @@ User :
    delete_user
    expire_user
    renew_user
+   reset_password
    expire_inactive_users
    delete_defunct_users
    delete_stale_archives
@@ -23,3 +24,11 @@ Utils
    sql_modify
    sql_request
    update_active_status
+
+landlord (unimplemented)
+   givelease
+   evict
+   disband
+   group*
+   put <user> in <group>
+   kick <user> from <group>

@@ -3,4 +3,4 @@
 
 use Landlord::User;
 
-Landlord::User::pass_reset(@ARGV);
+Landlord::User::reset_password(@ARGV);

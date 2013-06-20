@@ -51,7 +51,7 @@ sub add_user {
                "(id, username, fullname, email, status, expire_date, home) ".
                "VALUES ($uid, '$uname', '$name', '$email', 1, date('now', '+6 month'), '/home/$uname');";
 
-   Landlord::Utils::run_transaction($query);
+   Landlord::Utils::sql_modify($query);
 }
 sub delete_user {
    my $uname = $_[0];
@@ -69,9 +69,9 @@ sub delete_user {
    $query .= "UPDATE archives set remove_date = DATE('now') where username = '$uname';";
    $query .= "DELETE FROM users where username='$uname';";
 
-   Landlord::Utils::run_transaction($query);
+   Landlord::Utils::sql_modify($query);
 }
-sub pass_reset {
+sub reset_password {
    my $uname = $_[0];
    my $newpass = generate(8);
 
@@ -84,21 +84,21 @@ sub expire_user {
    my ($uname) = @_;
    my $upd = "update users set status = 0 where username = '$uname';";
    `passwd -l $uname`;
-   Landlord::Utils::run_transaction($upd);
+   Landlord::Utils::sql_modify($upd);
 }
 
 sub renew_user {
    my ($uname) = @_;
    my $upd = "update users set status = 1 where username = '$uname';";
    `passwd -u $uname`;
-   Landlord::Utils::run_transaction($upd);
+   Landlord::Utils::sql_modify($upd);
 }
 
 sub expire_inactive_users {
    &check_activity(7); # TODO Configureable
    my $scan = "select username from users where expire_date < DATE('now');";
    my @old;
-   my $result = Landlord::Utils::run_request($scan);
+   my $result = Landlord::Utils::sql_request($scan);
    for my $row (@$result) {
       &expire_user($$row[0]);
    }
@@ -107,7 +107,7 @@ sub expire_inactive_users {
 sub delete_defunct_users {
    my $scan = "select username from users where expire_date < DATE('now', '-3 months') and status = 0;";
    my @dellist;
-   my $result = Landlord::Utils::run_request($scan);
+   my $result = Landlord::Utils::sql_request($scan);
    for my $row (@$result) {
       &delete_user($$row[0]);
    }
@@ -116,13 +116,13 @@ sub delete_defunct_users {
 sub delete_stale_archives {
    my $scan = "select username from archives where remove_date < DATE('now', '-12 months');";
    my @dellist;
-   my $result = Landlord::Utils::run_request($scan);
+   my $result = Landlord::Utils::sql_request($scan);
    my $update = "";
    for my $row (@$result) {
       `rm -rv /home/archive/$$row[0]`;
       $update .= "delete from archives where username = '$$row[0]';";
    }
-   Landlord::Utils::run_transaction($update);
+   Landlord::Utils::sql_modify($update);
 }
 1;
 __END__
