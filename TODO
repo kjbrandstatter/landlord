@@ -1,12 +1,21 @@
 put the db query operations in separate module
 db->do db->prepare, etc
 
-initialize db from passwd
+initialize db from passwd - working at a basic level
 
-write the actual table schemas
+write the actual table schemas - work in progress
 
-user insert (database)
+user insert (database) - working
 
-user remove (database)
+user remove (database) - working
 
-scan for activity and update database
+scan for activity and update database - postponed, possibly unecessary
+
+add to group
+
+remove from group
+
+wrap all funcionality into a console/cli application
+
+ie landlord do
+or llconsole  read commands and execute

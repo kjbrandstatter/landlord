@@ -46,7 +46,7 @@ my $uid = `id -u $uname`;
 
 
 my $query .= "INSERT INTO users" .
-            "(id, username, fullname, email, status, inactive_date, home) ".
+            "(id, username, fullname, email, status, expire_date, home) ".
             "VALUES ($uid, '$uname', '$name', '$email', 1, date('now', '+6 month'), '/home/$uname');";
 
 my $dbfile = 'database.db';      # your database file

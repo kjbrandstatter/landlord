@@ -13,7 +13,8 @@ my ($gname) = @ARGV;
 `groupdel $gname`;
 
 
-my $query = "delete from groups where name == '$gname';";
+my $query = "PRAGMA foreign_keys=ON;";
+my $query .= "delete from groups where name == '$gname';";
 
 my $dbfile = 'database.db';      # your database file
 

@@ -8,9 +8,15 @@ use sqlite_handler;
 sqlite_handler::init_db($dbfile) if not -e $dbfile;
 
 sub refresh_info_from_system {
-   # Read user information out of passwd
-   # update database information
-   # create a working table
+   &refresh_users();
+   &refresh_groups();
+   &refresh_memberships();
+}
+
+# These functions are to verify consistency, they should be used very infrequently
+# They are currently inefficient, but i prefer inefficient if it guaruntees consistency
+# Ill continue to optimize to make them more efficient
+sub refresh_users {
    my $sql_run = "create temp table tmpuser (".
                  "id integer primary key, ".
                  "username char(50) unique not null, ".
@@ -35,22 +41,34 @@ sub refresh_info_from_system {
    }
    close PASSWD;
    $sql_run .= "insert into users select * from tmpuser where tmpuser.id not in (select id from users);";
-
-   $sql_run .= "CREATE temp TABLE tmpgroups (id integer primary key, name char(50) not null, description char(200) );";
-   $sql_run .= "CREATE temp TABLE tmpmemb (user_name integer, group_id integer, primary key (user_name, group_id), foreign key (user_name) references users(username), foreign key (group_id) references groups(id) );";
-   $sql_run .= "delete from group_memberships;";
+   $sql_run .= "delete from users where id in (select id from users except select id from tmpuser);";
+   sqlite_handler::run_transaction($dbfile, $sql_run);
+}
+sub refresh_groups {
+   my $sql_run = "CREATE temp TABLE tmpgroups (id integer primary key, name char(50) not null, description char(200) );";
    open(GROUPS, "</etc/group");
    for (<GROUPS>) {
       chomp;
       my @gargs = split ':';
       my @gu = split ',', $gargs[3] if $gargs[3];
       $sql_run .= "INSERT INTO tmpgroups (id, name) VALUES($gargs[2], '$gargs[0]');";
+   }
+   $sql_run .= "INSERT INTO groups select * from tmpgroups where id not in (select id from groups);";
+   close GROUPS;
+   sqlite_handler::run_transaction($dbfile, $sql_run);
+}
+sub refresh_memberships {
+   my $sql_run = "CREATE temp TABLE tmpmemb (user_name integer, group_id integer, primary key (user_name, group_id));";
+   open(GROUPS, "</etc/group");
+   for (<GROUPS>) {
+      chomp;
+      my @gargs = split ':';
+      my @gu = split ',', $gargs[3] if $gargs[3];
       for (@gu) {
          $sql_run .= "INSERT INTO tmpmemb VALUES ('$_' , $gargs[2]);";
       }
    }
-   $sql_run .= "INSERT INTO groups select * from tmpgroups where id not in (select id from groups);";
-   $sql_run .= "insert into group_memberships select * from (select users.id as uid, tmpmemb.group_id as gid from tmpmemb inner join users  on users.username == tmpmemb.user_name) as source except select * from group_memberships;";
+   $sql_run .= "insert or ignore into group_memberships select * from (select users.id as uid, tmpmemb.group_id as gid from tmpmemb inner join users  on users.username == tmpmemb.user_name) as source except select * from group_memberships;";
    close GROUPS;
    sqlite_handler::run_transaction($dbfile, $sql_run);
 }

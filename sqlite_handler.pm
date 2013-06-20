@@ -15,7 +15,7 @@ sub init_db {
              "fullname char(50) not null, ".
              "email char(50),".
              "home char(50) not null," .
-             "status integer not null,".
+             "status integer not null default 1,".
              "expire_date DATE not null); ";
    my $group_create = "create table groups (" .
                      "id integer primary key, ".
@@ -25,8 +25,8 @@ sub init_db {
                      "user_id integer, ".
                      "group_id integer, ".
                      "primary key (user_id,group_id), ".
-                     "foreign key (user_id) references users(id), ".
-                     "foreign key (group_id) references groups(id) );";
+                     "foreign key (user_id) references users(id) on delete cascade, ".
+                     "foreign key (group_id) references groups(id) on delete cascade );";
    &run_transaction($dbfile, $user_create . $group_create . $group_assoc) or
       die "Failed to create database\n";
 }
@@ -48,6 +48,7 @@ sub run_transaction {
    my ($dbfile, $query) = @_;
    my $dbh = &db_open($dbfile);
    $dbh->begin_work;
+   $dbh->do("PRAGMA foreign_keys=ON;");
    for (split(/;/, $query)){
       $dbh->do($_);
    }

@@ -14,7 +14,8 @@ print $home;
 
 
 chomp $uid;
-my $query .= "DELETE FROM users where username='$uname';";
+my $query = "PRAGMA foreign_keys = ON;";
+$query .= "DELETE FROM users where username='$uname';";
 
 use sqlite_handler;
 
