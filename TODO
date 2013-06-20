@@ -1,0 +1,12 @@
+put the db query operations in separate module
+db->do db->prepare, etc
+
+initialize db from passwd
+
+write the actual table schemas
+
+user insert (database)
+
+user remove (database)
+
+scan for activity and update database

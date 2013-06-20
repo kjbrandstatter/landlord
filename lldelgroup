@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+# lladdgroup username "full name" email [expire date]
+
+use strict;
+use warnings;
+
+package landlord::makeuser;
+
+if (not @ARGV) { die "No group name given\n"; }
+
+my ($gname) = @ARGV;
+
+`groupdel $gname`;
+
+
+my $query = "delete from groups where name == '$gname';";
+
+my $dbfile = 'database.db';      # your database file
+
+use sqlite_handler;
+
+sqlite_handler::run_transaction($dbfile, $query);

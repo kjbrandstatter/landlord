@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+package landlord;
+
+my @never;
+my @old;
+
+open(LASTLOG, "lastlog -b 90 |");
+while (<LASTLOG>){
+   if (m/([-_\w]+)/){
+      if ($1 ne "Username" and $1 ne "nobody" and `id -u $1` >= 1000){
+         push @old, $1;
+      }
+   }
+}
+
+print "Never: ". join("\n", @never) . "\n";
+print "Old: " . join("\n", @old) . "\n";

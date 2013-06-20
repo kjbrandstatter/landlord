@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+# lldeluser username
+
+#use Unix::Passwd::File qw(delete_user);
+#use File::Copy::Recursive "rcopy";
+
+my $uname = $ARGV[0];
+my $home = `grep $uname /etc/passwd | awk -F: '{ print \$6; }'`;
+chomp $home;
+print $home;
+`cp -r $home /home/archive`;
+`userdel -r $uname`;
+#delete_user('uname' => $uname);
+
+
+chomp $uid;
+my $query .= "DELETE FROM users where username='$uname';";
+
+use sqlite_handler;
+
+my $dbfile = "database.db";
+sqlite_handler::run_transaction($dbfile, $query);
