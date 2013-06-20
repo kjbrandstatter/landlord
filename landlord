@@ -33,7 +33,7 @@ sub refresh_users {
       my $email;
       if ($2) { $email = $2; } else { $email = ""; }
       my $name = $1;
-      if ($fields[2] >= 1000) {
+      if ($fields[2] >= 1000 and $fields[2] < 65534) {
          $sql_run .= "INSERT INTO tmpuser".
                "(id, username, fullname, email, home, status, expire_date) VALUES ".
                "($fields[2], '$fields[0]', '$name', '$email', '$fields[5]', 1, date('now')); ";

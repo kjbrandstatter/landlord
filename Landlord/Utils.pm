@@ -1,9 +1,20 @@
 #!/usr/bin/perl
 
-package sqlite_handler;
 use strict;
-use DBI;
+use warnings;
+package Landlord::Utils;
 
+sub generate {
+   my @letters = ('A'..'Z', 'a'..'z',0..9);
+   my $pword = "";
+   my $length = $_[0];
+   for (1..$length) {
+      $pword .= $letters[rand(@letters)];
+   }
+   return $pword;
+}
+
+use DBI;
 
 sub init_db {
    my $dbfile = $_[0];
@@ -31,7 +42,6 @@ sub init_db {
       die "Failed to create database\n";
 }
 
-
 # Returns handle to database
 sub db_open {
    my $dbfile = $_[0];
@@ -55,6 +65,7 @@ sub run_transaction {
    $dbh->commit;
    $dbh->disconnect();
 }
+
 sub run_request {
    my ($dbfile, $query) = @_;
    my $dbh = &db_open($dbfile);

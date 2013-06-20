@@ -4,6 +4,7 @@ db->do db->prepare, etc
 initialize db from passwd - working at a basic level
 
 write the actual table schemas - work in progress
+   remove home dir column?
 
 user insert (database) - working
 
@@ -15,7 +16,22 @@ add to group
 
 remove from group
 
+fix module exports
+
+sql request data function
+
 wrap all funcionality into a console/cli application
+put functionallity in backend modules and include as necessary
+
+configureable database name
 
 ie landlord do
 or llconsole  read commands and execute
+
+landlord supported commands
+   givelease or adduser
+   evict or deluser 
+   disband or delgroup
+   group or addgroup
+   put <user> in <group>
+   kick <user> from <group>

@@ -4,53 +4,6 @@
 use strict;
 use warnings;
 
-package landlord::makeuser;
-#use Unix::Passwd::File qw(add_user get_user);
-use pass_generator;
+use Landlord::User;
 
-my $pass = pass_generator::generate(8);
-print $pass . "\n";
-
-if ($#ARGV < 2) { die "Not enough arguements ".$#ARGV; }
-
-my ($uname, $name, $email, $expire) = @ARGV;
-
-my $gecos = $name . " <$email>";
-
-my $home = "/home/$uname";
-my $shell = "/bin/bash";
-
-my $opts = "-m -G users -s $shell ";
-#my %user = ( 'user' => $uname,
-#            'pass' => $pass,
-#            'shell' => $shell,
-#            'gecos' => $gecos,
-#            'group' => 'users'
-#         );
-#if ($expire) { $user{'expire'} = $expire; }
-if ($expire) { $opts .= $expire; }
-
-
-`useradd $opts $uname`;
-`echo $uname:$pass | chpasswd`;
-`passwd -e $uname`;
-my $uid = `id -u $uname`;
-
-#my @us = user($uname);
-#add_user( %user );
-#my $res = get_user( 'user' => $uname );
-#my $uinfo = $$res[2];
-#my $uid = $uinfo->{'uid'};
-
-
-
-
-my $query .= "INSERT INTO users" .
-            "(id, username, fullname, email, status, expire_date, home) ".
-            "VALUES ($uid, '$uname', '$name', '$email', 1, date('now', '+6 month'), '/home/$uname');";
-
-my $dbfile = 'database.db';      # your database file
-
-use sqlite_handler;
-
-sqlite_handler::run_transaction($dbfile, $query);
+Landlord::User::adduser(@ARGV);
