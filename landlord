@@ -4,8 +4,15 @@ use strict;
 use warnings;
 my $dbfile = 'database.db';      # your database file
 
-use sqlite_handler;
-sqlite_handler::init_db($dbfile) if not -e $dbfile;
+use Landlord::Utils;
+use Landlord::User;
+use Landlord::Group;
+if ($ARGV[0]){
+   Landlord::Utils::init_db($dbfile) if not -e $dbfile or $ARGV[0] eq "init";
+}
+elsif (not -e $dbfile) {
+   Landlord::Utils::init_db($dbfile);
+}
 
 sub refresh_info_from_system {
    &refresh_users();
@@ -42,7 +49,7 @@ sub refresh_users {
    close PASSWD;
    $sql_run .= "insert into users select * from tmpuser where tmpuser.id not in (select id from users);";
    $sql_run .= "delete from users where id in (select id from users except select id from tmpuser);";
-   sqlite_handler::run_transaction($dbfile, $sql_run);
+   Landlord::Utils::run_transaction($dbfile, $sql_run);
 }
 sub refresh_groups {
    my $sql_run = "CREATE temp TABLE tmpgroups (id integer primary key, name char(50) not null, description char(200) );";
@@ -51,26 +58,31 @@ sub refresh_groups {
       chomp;
       my @gargs = split ':';
       my @gu = split ',', $gargs[3] if $gargs[3];
-      $sql_run .= "INSERT INTO tmpgroups (id, name) VALUES($gargs[2], '$gargs[0]');";
+      if ($gargs[2] < 1000) {
+         $sql_run .= "INSERT INTO tmpgroups (id, name) VALUES($gargs[2], '$gargs[0]');";
+      }
    }
-   $sql_run .= "INSERT INTO groups select * from tmpgroups where id not in (select id from groups);";
+   $sql_run .= "INSERT INTO groups (id, name) select id,name from tmpgroups where id not in (select id from groups);";
    close GROUPS;
-   sqlite_handler::run_transaction($dbfile, $sql_run);
+   Landlord::Utils::run_transaction($dbfile, $sql_run);
 }
 sub refresh_memberships {
-   my $sql_run = "CREATE temp TABLE tmpmemb (user_name integer, group_id integer, primary key (user_name, group_id));";
+   my $sql_run = "CREATE temp table tmpmemb (user char(50), gid integer, primary key(user,gid));";
    open(GROUPS, "</etc/group");
    for (<GROUPS>) {
       chomp;
       my @gargs = split ':';
       my @gu = split ',', $gargs[3] if $gargs[3];
       for (@gu) {
-         $sql_run .= "INSERT INTO tmpmemb VALUES ('$_' , $gargs[2]);";
+         $sql_run .= "INSERT INTO tmpmemb values ('$_', $gargs[2]);";
       }
    }
-   $sql_run .= "insert or ignore into group_memberships select * from (select users.id as uid, tmpmemb.group_id as gid from tmpmemb inner join users  on users.username == tmpmemb.user_name) as source except select * from group_memberships;";
+   $sql_run .= "insert into group_memberships select users.id, tmpmemb.gid from users join tmpmemb on users.username = tmpmemb.user;";
    close GROUPS;
-   sqlite_handler::run_transaction($dbfile, $sql_run);
+   Landlord::Utils::run_transaction($dbfile, $sql_run);
 }
 
-&refresh_info_from_system();
+
+#&refresh_info_from_system();
+#Landlord::Utils::check_old($ARGV[0]);
+#Landlord::Utils::remove_archives();

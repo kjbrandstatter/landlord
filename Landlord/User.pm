@@ -4,8 +4,19 @@ use warnings;
 package Landlord::User;
 use Landlord::Utils;
 
-sub adduser {
-   my $pass = Landlord::Utils::generate(8);
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
+require Exporter;
+@ISA = qw(Exporter AutoLoader);
+$VERSION = '0.01';
+
+@EXPORT = qw();
+
+@EXPORT_OK = qw(add_user delete_user);
+
+
+# User Related functions
+sub add_user {
+   my $pass = generate(8);
    print $pass . "\n";
 
    my ($uname, $name, $email, $expire) = @_;
@@ -20,7 +31,7 @@ sub adduser {
    my $home = "/home/$uname"; # if not $home;
    my $shell = "/bin/bash"; # if not $shell;
 
-   my $opts = "-m -G users -s $shell ";
+   my $opts = "-m -s $shell ";
    #my %user = ( 'user' => $uname,
    #            'pass' => $pass,
    #            'shell' => $shell,
@@ -40,13 +51,9 @@ sub adduser {
                "(id, username, fullname, email, status, expire_date, home) ".
                "VALUES ($uid, '$uname', '$name', '$email', 1, date('now', '+6 month'), '/home/$uname');";
 
-   my $dbfile = 'database.db';      # your database file
-
-   use Landlord::Utils;
-
-   Landlord::Utils::run_transaction($dbfile, $query);
+   Landlord::Utils::run_transaction($query);
 }
-sub deluser {
+sub delete_user {
    my $uname = $_[0];
    # change these to get the info from the sql database instead
    my $home = `grep $uname /etc/passwd | awk -F: '{ print \$6; }'`;
@@ -58,19 +65,64 @@ sub deluser {
    `userdel -r $uname`;
    #delete_user('uname' => $uname);
 
-   my $query = "DELETE FROM users where username='$uname';";
+   my $query = "INSERT INTO archives (username, email, remove_date) select username, email, expire_date from users where username = '$uname';";
+   $query .= "UPDATE archives set remove_date = DATE('now') where username = '$uname';";
+   $query .= "DELETE FROM users where username='$uname';";
 
-   use Landlord::Utils;
-
-   my $dbfile = "database.db";
-   Landlord::Utils::run_transaction($dbfile, $query);
+   Landlord::Utils::run_transaction($query);
 }
 sub pass_reset {
-   my $uname = $ARGV[0];
-   my $newpass = Landlord::Utils::generate(8);
+   my $uname = $_[0];
+   my $newpass = generate(8);
 
    `echo $uname:$newpass | chpasswd`;
    `echo $newpass > $uname`;
    `passwd -e $uname`;
 }
-1
+
+sub expire_user {
+   my ($uname) = @_;
+   my $upd = "update users set status = 0 where username = '$uname';";
+   `passwd -l $uname`;
+   Landlord::Utils::run_transaction($upd);
+}
+
+sub renew_user {
+   my ($uname) = @_;
+   my $upd = "update users set status = 1 where username = '$uname';";
+   `passwd -u $uname`;
+   Landlord::Utils::run_transaction($upd);
+}
+
+sub expire_inactive_users {
+   &check_activity(7); # TODO Configureable
+   my $scan = "select username from users where expire_date < DATE('now');";
+   my @old;
+   my $result = Landlord::Utils::run_request($scan);
+   for my $row (@$result) {
+      &expire_user($$row[0]);
+   }
+}
+
+sub delete_defunct_users {
+   my $scan = "select username from users where expire_date < DATE('now', '-3 months') and status = 0;";
+   my @dellist;
+   my $result = Landlord::Utils::run_request($scan);
+   for my $row (@$result) {
+      &delete_user($$row[0]);
+   }
+}
+
+sub delete_stale_archives {
+   my $scan = "select username from archives where remove_date < DATE('now', '-12 months');";
+   my @dellist;
+   my $result = Landlord::Utils::run_request($scan);
+   my $update = "";
+   for my $row (@$result) {
+      `rm -rv /home/archive/$$row[0]`;
+      $update .= "delete from archives where username = '$$row[0]';";
+   }
+   Landlord::Utils::run_transaction($update);
+}
+1;
+__END__

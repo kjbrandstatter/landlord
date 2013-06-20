@@ -1,10 +1,19 @@
+package Landlord::Group;
+use Landlord::Utils;
 use strict;
 use warnings;
 
-package Landlord::Group;
-use Landlord::Utils;
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
+require Exporter;
+@ISA = qw(Exporter AutoLoader);
+$VERSION = '0.01';
 
-sub addgroup {
+@EXPORT = qw();
+
+@EXPORT_OK = qw(add_group delete_group add_to_group delete_from_group);
+
+# Group Related functions
+sub add_group {
    my ($gname, $desc) = @_;
 
    if (not $gname) { die "No group name given\n"; }
@@ -31,14 +40,10 @@ sub addgroup {
       $query = "INSERT INTO groups (id, name) VALUES ('$gid' , '$gname')";
    }
 
-   my $dbfile = 'database.db';      # your database file
-
-   use Landlord::Utils;
-
-   Landlord::Utils::run_transaction($dbfile, $query);
+   Landlord::Utils::sql_modify($query);
 }
 
-sub delgroup {
+sub delete_group {
    my ($gname) = @_;
    if (not $gname) { die "No group name given\n"; }
 
@@ -48,10 +53,27 @@ sub delgroup {
 
    my $query = "delete from groups where name == '$gname';";
 
-   my $dbfile = 'database.db';      # your database file
-
-   use Landlord::Utils;
-
-   Landlord::Utils::run_transaction($dbfile, $query);
+   Landlord::Utils::sql_modify($query);
 }
-1
+
+sub add_to_group {
+   my ($user, $group) = @_;
+   die "Invalid arguments" if not $user or not $group;
+   `gpasswd -a $user $group`;
+   #my $stmt = "INSERT into group_memberships values ('$user', '$group');";
+   my $stmt = "INSERT into group_memberships select uid,gid from ".
+              "(SELECT id as uid from users where username = '$user') ".
+              "join (select id as gid from groups where name = '$group');";
+   Landlord::Utils::sql_modify($stmt);
+}
+
+sub delete_from_group {
+   my ($user, $group) = @_;
+   die "Invalid arguments" if not $user or not $group;
+   `gpasswd -r $user $group`;
+   my $stmt = "Delete from group_memberships where user = '$user' AND group = '$group';";
+   Landlord::Utils::sql_modify($stmt);
+}
+
+1;
+__END__

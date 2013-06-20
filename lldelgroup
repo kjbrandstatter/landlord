@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # lladdgroup username "full name" email [expire date]
 
-use Landlord::Group;
+use Landlord::Group qw(delgroup);
 
-Landlord::Group::delgroup(@ARGV);
+delgroup(@ARGV);

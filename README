@@ -1,0 +1,25 @@
+Landlord is a perl based user management utility.
+
+Module API
+User :
+   add_user
+   delete_user
+   expire_user
+   renew_user
+   expire_inactive_users
+   delete_defunct_users
+   delete_stale_archives
+
+Group :
+   add_group groupname
+   delete_group groupname
+   add_to_group username groupname
+   delete_from_group username groupname
+
+Utils
+   read_config_file
+   init_db
+   open_db
+   sql_modify
+   sql_request
+   update_active_status

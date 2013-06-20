@@ -4,6 +4,6 @@
 #use Unix::Passwd::File qw(delete_user);
 #use File::Copy::Recursive "rcopy";
 
-use Landlord::User;
+use Landlord::landlord qw(deluser);
 
-Landlord::User::deluser(@ARGV);
+deluser(@ARGV);

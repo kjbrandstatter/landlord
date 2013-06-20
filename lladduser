@@ -4,6 +4,6 @@
 use strict;
 use warnings;
 
-use Landlord::User;
+use Landlord::User qw(add_user);
 
-Landlord::User::adduser(@ARGV);
+add_user(@ARGV);

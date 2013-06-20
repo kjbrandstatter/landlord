@@ -1,7 +1,4 @@
-put the db query operations in separate module
-db->do db->prepare, etc
-
-initialize db from passwd - working at a basic level
+initialize db from passwd - working (could be improved)
 
 write the actual table schemas - work in progress
    remove home dir column?
@@ -12,18 +9,23 @@ user remove (database) - working
 
 scan for activity and update database - postponed, possibly unecessary
 
-add to group
+add to group - working
 
-remove from group
+remove from group - working
 
-fix module exports
+scanning functions for expiring/archiving/deleting users - done
 
-sql request data function
+sql request data function - done
 
 wrap all funcionality into a console/cli application
-put functionallity in backend modules and include as necessary
 
 configureable database name
+
+data lookup functions (ie emails, name search etc)
+
+use ENV to store configuration variables like the database, and timeouts
+
+better consistency of names in functions
 
 ie landlord do
 or llconsole  read commands and execute
