@@ -64,7 +64,7 @@ sub init_db {
                   " from (select username , group_id from users".
                   " join group_memberships as gu on users.id = gu.user_id)".
                   " as ug join groups on ug.group_id = groups.id;";
-   &sql_modify($dbfile,
+   &sql_modify(
       $drop .
       $user_create .
       $group_create .
