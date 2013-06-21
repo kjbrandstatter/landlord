@@ -49,7 +49,7 @@ sub add_user {
 
    my $query .= "INSERT INTO users" .
                "(id, username, fullname, email, status, expire_date, home) ".
-               "VALUES ($uid, '$username', '$name', '$email', 1, date('now', '+6 month'), '/home/$username');";
+               "VALUES ($uid, '$username', '$fullname', '$email', 1, date('now', '+6 month'), '/home/$username');";
 
    Landlord::Utils::sql_modify($query);
 }

@@ -7,8 +7,7 @@ use Landlord::Utils;
 use Landlord::User;
 use Landlord::Group;
 if ($ARGV[0]){
-   Landlord::Utils::init_db($dbfile) if not -e $dbfile or $ARGV[0] eq "init";
+   Landlord::Utils::init_db() if $ARGV[0] eq "init";
 }
-elsif (not -e $dbfile) {
-   Landlord::Utils::init_db($dbfile);
-}
+
+Landlord::Utils::update_active_status(7);

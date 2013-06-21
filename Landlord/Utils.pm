@@ -117,7 +117,7 @@ sub update_active_status {
       push @active_users, $1 if not $1 eq "Username";
    }
    my $update = "update users set expire_date = DATE('now', '+6 month') ".
-                "where username in (" . join(",", @active_users) . ");";
+                "where username in ('" . join("','", @active_users) . "');";
    &sql_modify($update);
 }
 
