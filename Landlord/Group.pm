@@ -16,37 +16,27 @@ $VERSION = '0.01';
 sub add_group {
    my ($group, $description) = @_;
 
-   if (not $group) { die "No group name given\n"; }
+   die "No group name given\n" if (not $group);
    # Set the default options. We shall expand this later
    my $opts = "";
 
    `groupadd $group`;
-   my $gid;
    open(GROUP, "</etc/group");
-   for (<GROUP>){
-      if (m/^$group:.*:(\d+)/){
-         $gid = $1;
-         last;
-      }
-   }
+   my ($_) = grep(/$group/, <GROUP>)
+   my (undef,undef,$gid) = split ":";
    close GROUP;
 
-   my $query;
-   if ($description) {
-      $query = "INSERT INTO groups (id, name, description) ".
-         "VALUES ('$gid' , '$group', '$description')";
-   }
-   else {
-      $query = "INSERT INTO groups (id, name) VALUES ('$gid' , '$group')";
-   }
+   my $query = $description ?
+      "INSERT INTO groups (id, name, description) ".
+      "VALUES ('$gid' , '$group', '$description')"
+      : "INSERT INTO groups (id, name) VALUES ('$gid' , '$group')";
 
    Landlord::Utils::sql_modify($query);
 }
 
 sub delete_group {
    my ($group) = @_;
-   if (not $group) { die "No group name given\n"; }
-
+   die "No group name given\n" if (not $group);
 
    `groupdel $group`;
 
@@ -59,10 +49,11 @@ sub add_to_group {
    my ($user, $group) = @_;
    die "Invalid arguments" if not $user or not $group;
    `gpasswd -a $user $group`;
-   #my $stmt = "INSERT into group_memberships values ('$user', '$group');";
-   my $stmt = "INSERT into group_memberships select uid,gid from ".
-              "(SELECT id as uid from users where username = '$user') ".
-              "join (select id as gid from groups where name = '$group');";
+   my $stmt =<< "END_SQL";
+INSERT into group_memberships select uid,gid from
+(SELECT id as uid from users where username = '$user')
+join (select id as gid from groups where name = '$group');
+END_SQL
    Landlord::Utils::sql_modify($stmt);
 }
 

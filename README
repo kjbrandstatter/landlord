@@ -28,6 +28,7 @@ Utils
    refresh_users
    refresh_groups
    refresh_memberships
+   generate_password
 
 landlord (unimplemented)
    givelease

@@ -3,6 +3,7 @@ use warnings;
 
 package Landlord::User;
 use Landlord::Utils;
+use feature "say";
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 require Exporter;
@@ -16,16 +17,15 @@ $VERSION = '0.01';
 
 # User Related functions
 sub add_user {
-   my $pass = generate(8);
-   print $pass . "\n";
+   my $pass = Landlord::Utils::generate_password(8);
+   say $pass;
 
    my ($username, $fullname, $email, $expire) = @_;
 
    die "No username supplied" if not $username;
 
 
-   my $gecos = "";
-   $gecos .= $fullname if $fullname;
+   my $gecos .= defined $fullname;
    $gecos .= " <$email>" if $email;
 
    my $home = "/home/$username"; # if not $home;
@@ -45,29 +45,37 @@ sub add_user {
    `useradd $opts $username`;
    `echo $username:$pass | chpasswd`;
    `passwd -e $username`;
-   my $uid = `id -u $username`;
+   open PASSWD, "</etc/passwd" or die $!;
+   my ($_) = grep (/$username/, <PASSWD>);
+   my (undef,undef,$uid) = split ":";
+   close PASSWD;
 
-   my $query .= "INSERT INTO users" .
-               "(id, username, fullname, email, status, expire_date, home) ".
-               "VALUES ($uid, '$username', '$fullname', '$email', 1, date('now', '+6 month'), '/home/$username');";
+   my $query =<< "END_SQL";
+INSERT INTO users
+(id, username, fullname, email, status, expire_date, home)
+VALUES ($uid, '$username', '$fullname', '$email', 1, date('now', '+6 month'), '/home/$username');
+END_SQL
 
    Landlord::Utils::sql_modify($query);
 }
 sub delete_user {
    my $username = $_[0];
    # change these to get the info from the sql database instead
-   my $home = `grep $username /etc/passwd | awk -F: '{ print \$6; }'`;
-   chomp $home;
-   my $uid = `id -u $username`;
-   chomp $uid;
+   open PASSWD, "</etc/passwd";
+   my ($_) = grep (/$username/, <PASSWD>);
+   my (undef,undef,undef,undef,undef,$home) = split ":";
+   close PASSWD;
 
-   `cp -r $home /home/archive`;
-   `userdel -r $username`;
+   `cp -r $home /home/archive`; # rcopy didnt work, perhaps used incorrectly
+   `userdel -r $username`; # technical debt. we wrap these everywhere
    #delete_user('username' => $username);
 
-   my $query = "INSERT INTO archives (username, email, remove_date) select username, email, expire_date from users where username = '$username';";
-   $query .= "UPDATE archives set remove_date = DATE('now') where username = '$username';";
-   $query .= "DELETE FROM users where username='$username';";
+   my $query =<< "END_SQL";
+INSERT INTO archives (username, email, remove_date)
+select username, email, expire_date from users where username = '$username';
+UPDATE archives set remove_date = DATE('now') where username = '$username';
+DELETE FROM users where username='$username';
+END_SQL
 
    Landlord::Utils::sql_modify($query);
 }
@@ -98,24 +106,24 @@ sub expire_inactive_users {
    &check_activity(7); # TODO Configureable
    my $query = "select username from users where expire_date < DATE('now');";
    my $results = Landlord::Utils::sql_request($query);
-   for my $row (@$results) {
-      &expire_user($$row[0]);
-   }
+   expire_user($$_[0]) for (@$results);
 }
 
 sub delete_defunct_users {
-   my $query = "select username from users".
-               " where expire_date < DATE('now', '-3 months') ".
-               " and status = 0;";
+   my $query =<< "END_SQL";
+select username from users
+where expire_date < DATE('now', '-3 months')
+and status = 0;
+END_SQL
    my $results = Landlord::Utils::sql_request($query);
-   for my $row (@$results) {
-      &delete_user($$row[0]);
-   }
+   delete_user($$_[0]) for (@$results);
 }
 
 sub delete_stale_archives {
-   my $query = "select username from archives".
-               " where remove_date < DATE('now', '-12 months');";
+   my $query =<< "END_SQL";
+select username from archives
+where remove_date < DATE('now', '-12 months');
+END_SQL
    my $result = Landlord::Utils::sql_request($query);
    my $update = "";
    for my $row (@$result) {
