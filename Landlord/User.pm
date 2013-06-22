@@ -46,8 +46,7 @@ sub add_user {
    `echo $username:$pass | chpasswd`;
    `passwd -e $username`;
    open PASSWD, "</etc/passwd" or die $!;
-   my ($_) = grep (/$username/, <PASSWD>);
-   my (undef,undef,$uid) = split ":";
+   my $uid = (map { split ":" } grep(/$username/, <PASSWD>))[2];
    close PASSWD;
 
    my $query =<< "END_SQL";
@@ -62,8 +61,7 @@ sub delete_user {
    my $username = $_[0];
    # change these to get the info from the sql database instead
    open PASSWD, "</etc/passwd";
-   my ($_) = grep (/$username/, <PASSWD>);
-   my (undef,undef,undef,undef,undef,$home) = split ":";
+   my $home = (map { split ":" } grep(/$username/, <PASSWD>))[5];
    close PASSWD;
 
    `cp -r $home /home/archive`; # rcopy didnt work, perhaps used incorrectly

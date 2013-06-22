@@ -22,8 +22,7 @@ sub add_group {
 
    `groupadd $group`;
    open(GROUP, "</etc/group");
-   my ($_) = grep(/$group/, <GROUP>)
-   my (undef,undef,$gid) = split ":";
+   my $gid = (map { split ":" } grep {/$group/} <GROUP>)[2];
    close GROUP;
 
    my $query = $description ?
