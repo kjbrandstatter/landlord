@@ -74,7 +74,7 @@ from (select username , group_id from users
 join group_memberships as gu on users.id = gu.user_id)
 as ug join groups on ug.group_id = groups.id;
 END_SQL
-   &sql_modify(
+   sql_modify(
       $drop .
       $user_create .
       $group_create .
@@ -132,13 +132,13 @@ sub update_active_status {
 update users set expire_date = DATE('now', '+6 month')
 where username in ('$active_list');
 END_SQL
-   &sql_modify($update);
+   sql_modify($update);
 }
 
 sub refresh_database_info {
-   &refresh_users();
-   &refresh_groups();
-   &refresh_memberships();
+   refresh_users();
+   refresh_groups();
+   refresh_memberships();
 }
 
 # These functions are to verify consistency, they should be used very infrequently
@@ -155,18 +155,19 @@ home char(50) not null,
 status integer not null,
 expire_date DATE not null);
 END_SQL
-   open(PASSWD, "</etc/passwd");
+   open(PASSWD, "</etc/passwd") or die "Failed to open passwd file";
    for (<PASSWD>) {
       chomp;
       my @fields = split ":";
       $fields[4] =~ m/(.*)(?:<(.*)>)?/;
-      my $name = $1;
-      my $email = $2 ? $2 : "";
+      my $name = DBI::neat($1);
+      my $email = $2 ? DBI::neat($2) : "''";
+      my $home = DBI::neat($fields[5]);
       if ($fields[2] >= 1000 and $fields[2] < 65534) {
          $query .=<< "END_SQL";
 INSERT INTO tmpuser
 (id, username, fullname, email, home, status, expire_date) VALUES
-($fields[2], '$fields[0]', '$name', '$email', '$fields[5]', 1, date('now'));
+($fields[2], '$fields[0]', $name, $email, $home, 1, date('now'));
 END_SQL
       }
    }
@@ -177,7 +178,7 @@ where tmpuser.id not in (select id from users);
 delete from users
 where id in (select id from users except select id from tmpuser);
 END_SQL
-   &sql_modify($query);
+   sql_modify($query);
 }
 sub refresh_groups {
    my $query =<< "END_SQL";
@@ -186,7 +187,7 @@ id integer primary key,
 name char(50) not null,
 description char(200) );
 END_SQL
-   open(GROUPS, "</etc/group");
+   open(GROUPS, "</etc/group") or die "Failed to open group file";
    for (<GROUPS>) {
       chomp;
       my @fields = split ':';
@@ -199,7 +200,7 @@ INSERT INTO groups (id, name) select id,name from tmpgroups
 where id not in (select id from groups);
 END_SQL
    close GROUPS;
-   &sql_modify($query);
+   sql_modify($query);
 }
 sub refresh_memberships {
    my $query =<< "END_SQL";
@@ -208,7 +209,7 @@ user char(50),
 gid integer,
 primary key(user,gid));
 END_SQL
-   open(GROUPS, "</etc/group");
+   open(GROUPS, "</etc/group") or die "Failed to open group file";
    for (<GROUPS>) {
       chomp;
       my @fields = split ':';
@@ -224,7 +225,7 @@ select users.id, tmpmemb.gid
 from users join tmpmemb
 on users.username = tmpmemb.user;
 END_SQL
-   &sql_modify($query);
+   sql_modify($query);
 }
 1
 __END__
