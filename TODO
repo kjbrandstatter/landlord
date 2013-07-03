@@ -25,6 +25,8 @@ Core:
 
    better consistency of names in functions
 
+   sql parameterization
+
 Actions:
  * user insert (database) - working
 

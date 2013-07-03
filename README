@@ -31,9 +31,10 @@ Utils
    generate_password
 
 landlord (unimplemented)
-   givelease
-   evict
-   disband
-   group*
+   givelease/lease to => add user
+   evict => delete user
+   suspend => lock user
+   disband => delete group
+   group* => make a group
    put <user> in <group>
    kick <user> from <group>

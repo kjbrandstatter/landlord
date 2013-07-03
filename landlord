@@ -6,8 +6,54 @@ use warnings;
 use Landlord::Utils;
 use Landlord::User;
 use Landlord::Group;
+use feature "say";
+use Test::More;
 if ($ARGV[0]){
    Landlord::Utils::init_db() if $ARGV[0] eq "init";
+   Landlord::Utils::refresh_database_info if $ARGV[0] eq "refresh";
 }
 
-Landlord::Utils::update_active_status(7);
+#Landlord::Utils::update_active_status(7);
+# Option specifications
+my %options_description = ("email" => qr/[\w\.]+@(?:[\w+]\.?){2,}/,
+                           "name" => qr/\w+|(?:".*")/);
+
+my @regoplist;
+while ( my ($op, $re) = each %options_description){
+   push @regoplist , qr/($op=$re)/;
+}
+my $_ = join "|", @regoplist;
+my $options = qr/$_/;
+
+# Language regexes
+my $add_user_command = qr/\Alease for (\w+)(?:\swith\s(?:$options\s*)+)?\Z/;
+my $delete_user_command = qr/\Aevict (\w+)\Z/;
+my $lock_user_command = qr/\Asuspend (\w+)\Z/;
+my $delete_group_command = qr/\Adisband (\w+)\Z/;
+my $make_group_command = qr/\Agroup (\w+)\Z/;
+my $add_to_group_command = qr/\Aput (\w+) in (\w+)\Z/;
+my $remove_from_group_command = qr/\Akick (\w+) from (\w+)\Z/;
+
+ok ('email=kevin@kjbrandstatter.com' =~ $options, "options regex test");
+ok ('email=kevin@kjbrandstatter.com name="Kevin Brandstatter"' =~ $options, "options regex test 2");
+ok ('email=kevin@kjbrandstatter.com name="Kevin Brandstatter"' =~ /(?:$options\s?){2}/, "options regex test 2");
+ok ('email=kjbrandstatter.com' !~ $options, "Test email regex");
+ok ("lease for kevin" =~ /$add_user_command/, "add user regex test no options");
+ok ('lease for kevin with email=kevin@hawk.iit.edu' =~ /$add_user_command/, "add user regex test 1");
+ok ('lease for kevin with email=kevin@hawk.iit.edu name="Kevin Brandstatter"' =~ /$add_user_command/, "add user regex test multiple options");
+ok (('lease for kevin with email=kevin@hawk.iit.edu meow' !~ /$add_user_command/), "add user regex test extra words");
+ok (('lease for kevin with email=kevin@hawk.iit.edu meow=moo' !~ /$add_user_command/), "add user regex test invalid option");
+ok ("evict kevin" =~ $delete_user_command, "delete user regex check 1");
+ok (" evict kevin" !~ $delete_user_command, "delete user regex check 2");
+done_testing();
+#exit;
+use feature qw(switch);
+while (<>){
+   chomp;
+   given($_) {
+      when (/$add_user_command/) { say "adding $1 with $2" ; say $2 if $2;}
+      default { say "Invalid command"; }
+   }
+}
+exit;
+

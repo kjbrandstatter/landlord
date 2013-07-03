@@ -42,20 +42,20 @@ sub add_user {
    #if ($expire) { $opts .= $expire; }
 
 
-   `useradd $opts $username`;
-   `echo $username:$pass | chpasswd`;
-   `passwd -e $username`;
-   open PASSWD, "</etc/passwd" or die $!;
+   open PASSWD, "</etc/passwd" or die "Could not open passwd file";
    my $uid = (map { split ":" } grep(/$username/, <PASSWD>))[2];
    close PASSWD;
 
    my $query =<< "END_SQL";
 INSERT INTO users
 (id, username, fullname, email, status, expire_date, home)
-VALUES ($uid, '$username', '$fullname', '$email', 1, date('now', '+6 month'), '/home/$username');
+VALUES ($uid, '$username', '$fullname', '$email', 1,
+         date('now', '+6 month'), '/home/$username');
 END_SQL
 
-   Landlord::Utils::sql_modify($query);
+   Landlord::Utils::sql_modify($query) if `useradd $opts $username`;
+   `echo $username:$pass | chpasswd` or die "Failed to change password";
+   `passwd -e $username` or die "Failed to expire password";
 }
 sub delete_user {
    my $username = $_[0];
@@ -64,9 +64,8 @@ sub delete_user {
    my $home = (map { split ":" } grep(/$username/, <PASSWD>))[5];
    close PASSWD;
 
-   `cp -r $home /home/archive`; # rcopy didnt work, perhaps used incorrectly
-   `userdel -r $username`; # technical debt. we wrap these everywhere
-   #delete_user('username' => $username);
+   # rcopy didnt work, perhaps used incorrectly
+   `cp -r $home /home/archive` or die "Failed to archive user";
 
    my $query =<< "END_SQL";
 INSERT INTO archives (username, email, remove_date)
@@ -75,29 +74,27 @@ UPDATE archives set remove_date = DATE('now') where username = '$username';
 DELETE FROM users where username='$username';
 END_SQL
 
-   Landlord::Utils::sql_modify($query);
+   Landlord::Utils::sql_modify($query) if `userdel -r $username`;
 }
 sub reset_password {
    my $username = $_[0];
    my $newpass = generate(8);
 
    `echo $username:$newpass | chpasswd`;
-   `echo $newpass > $username`;
+   `echo $newpass > $username`; # replace this mechanism with an email approach
    `passwd -e $username`;
 }
 
 sub expire_user {
    my ($username) = @_;
    my $query = "update users set status = 0 where username = '$username';";
-   `passwd -l $username`;
-   Landlord::Utils::sql_modify($query);
+   Landlord::Utils::sql_modify($query) if `passwd -l $username`;
 }
 
 sub renew_user {
    my ($username) = @_;
    my $query = "update users set status = 1 where username = '$username';";
-   `passwd -u $username`;
-   Landlord::Utils::sql_modify($query);
+   Landlord::Utils::sql_modify($query) if `passwd -u $username`;
 }
 
 sub expire_inactive_users {
@@ -125,7 +122,7 @@ END_SQL
    my $result = Landlord::Utils::sql_request($query);
    my $update = "";
    for my $row (@$result) {
-      `rm -rv /home/archive/$$row[0]`;
+      `rm -rvf /home/archive/$$row[0]`;
       $update .= "delete from archives where username = '$$row[0]';";
    }
    Landlord::Utils::sql_modify($update);

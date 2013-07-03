@@ -17,11 +17,8 @@ sub add_group {
    my ($group, $description) = @_;
 
    die "No group name given\n" if (not $group);
-   # Set the default options. We shall expand this later
-   my $opts = "";
 
-   `groupadd $group`;
-   open(GROUP, "</etc/group");
+   open(GROUP, "</etc/group") or die "Cannot open group file";
    my $gid = (map { split ":" } grep {/$group/} <GROUP>)[2];
    close GROUP;
 
@@ -30,39 +27,34 @@ sub add_group {
       "VALUES ('$gid' , '$group', '$description')"
       : "INSERT INTO groups (id, name) VALUES ('$gid' , '$group')";
 
-   Landlord::Utils::sql_modify($query);
+   Landlord::Utils::sql_modify($query) if `groupadd $group`;
 }
 
 sub delete_group {
    my ($group) = @_;
    die "No group name given\n" if (not $group);
 
-   `groupdel $group`;
-
    my $query = "delete from groups where name == '$group';";
 
-   Landlord::Utils::sql_modify($query);
+   Landlord::Utils::sql_modify($query) if `groupdel $group`;
 }
 
 sub add_to_group {
    my ($user, $group) = @_;
    die "Invalid arguments" if not $user or not $group;
-   `gpasswd -a $user $group`;
-   my $stmt =<< "END_SQL";
+   my $query =<< "END_SQL";
 INSERT into group_memberships select uid,gid from
 (SELECT id as uid from users where username = '$user')
 join (select id as gid from groups where name = '$group');
 END_SQL
-   Landlord::Utils::sql_modify($stmt);
+   Landlord::Utils::sql_modify($query) if `gpasswd -a $user $group`;
 }
 
 sub delete_from_group {
    my ($user, $group) = @_;
    die "Invalid arguments" if not $user or not $group;
-   `gpasswd -r $user $group`;
-   my $stmt = "Delete from group_memberships where user = '$user' AND group = '$group';";
-   Landlord::Utils::sql_modify($stmt);
+   my $query = "Delete from group_memberships where user = '$user' AND group = '$group';";
+   Landlord::Utils::sql_modify($query) if `gpasswd -r $user $group`;
 }
-
 1;
 __END__

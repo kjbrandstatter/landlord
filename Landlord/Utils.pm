@@ -95,19 +95,21 @@ sub open_db {
    return $dbh;
 }
 
+# Deprecate this
 sub sql_modify {
    my ($query) = @_;
-   my $dbh = &open_db();
+   my $dbh = open_db();
    $dbh->begin_work;
    $dbh->do("PRAGMA foreign_keys=ON;");
    for (split(/;/, $query)){
-      #print "$_\n"; # For debugging purposes
+      print "$_\n"; # For debugging purposes
       $dbh->do($_);
    }
    $dbh->commit;
    $dbh->disconnect();
 }
 
+# Deprecate
 sub sql_request {
    my ($query) = @_;
    my $dbh = &open_db($dbfile);
@@ -160,14 +162,14 @@ END_SQL
       chomp;
       my @fields = split ":";
       $fields[4] =~ m/(.*)(?:<(.*)>)?/;
-      my $name = DBI::neat($1);
-      my $email = $2 ? DBI::neat($2) : "''";
-      my $home = DBI::neat($fields[5]);
+      my $name = $1;
+      my $email = $2 ? $2 : "";
+      my $home = $fields[5];
       if ($fields[2] >= 1000 and $fields[2] < 65534) {
          $query .=<< "END_SQL";
 INSERT INTO tmpuser
 (id, username, fullname, email, home, status, expire_date) VALUES
-($fields[2], '$fields[0]', $name, $email, $home, 1, date('now'));
+($fields[2], '$fields[0]', '$name', '$email', '$home', 1, date('now'));
 END_SQL
       }
    }
