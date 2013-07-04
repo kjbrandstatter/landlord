@@ -13,7 +13,7 @@ $VERSION = '0.01';
 
 @EXPORT = qw();
 
-@EXPORT_OK = qw();
+@EXPORT_OK = qw(open_db);
 
 my $dbfile = "database.db"; # or read from config file etc.
 

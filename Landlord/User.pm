@@ -2,7 +2,8 @@ use strict;
 use warnings;
 
 package Landlord::User;
-use Landlord::Utils;
+use Landlord::Utils qw(open_db);
+use DBI;
 use feature "say";
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
@@ -17,6 +18,7 @@ $VERSION = '0.01';
 
 # User Related functions
 sub add_user {
+   my $dbh = open_db();
    my $pass = Landlord::Utils::generate_password(8);
    say $pass;
 
@@ -49,13 +51,17 @@ sub add_user {
    my $query =<< "END_SQL";
 INSERT INTO users
 (id, username, fullname, email, status, expire_date, home)
-VALUES ($uid, '$username', '$fullname', '$email', 1,
-         date('now', '+6 month'), '/home/$username');
+VALUES (?, ?, ?, ?, 1, date('now', '+6 month'), ?);
 END_SQL
 
-   Landlord::Utils::sql_modify($query) if `useradd $opts $username`;
-   `echo $username:$pass | chpasswd` or die "Failed to change password";
-   `passwd -e $username` or die "Failed to expire password";
+   my $sth = $dbh->prepare($query);
+
+   `useradd $opts $username`;
+   $sth->execute($uid, $username, $fullname, $email, $home);
+   $dbh->disconnect();
+   #Landlord::Utils::sql_modify($query) if `useradd $opts $username`;
+   `echo $username:$pass | chpasswd`;
+   `passwd -e $username`;
 }
 sub delete_user {
    my $username = $_[0];
@@ -65,20 +71,27 @@ sub delete_user {
    close PASSWD;
 
    # rcopy didnt work, perhaps used incorrectly
-   `cp -r $home /home/archive` or die "Failed to archive user";
+   `cp -r $home /home/archive`;
 
+   my $dbh = open_db();
    my $query =<< "END_SQL";
-INSERT INTO archives (username, email, remove_date)
-select username, email, expire_date from users where username = '$username';
-UPDATE archives set remove_date = DATE('now') where username = '$username';
-DELETE FROM users where username='$username';
+INSERT INTO archives (username, email, remove_date) select username, email, expire_date from users where username = ?;
+UPDATE archives set remove_date = DATE('now') where username = ?;
+DELETE FROM users where username = ?;
 END_SQL
+   `userdel -r $username`;
+   for (split(";", $query)) {
+      say;
+      $dbh->do($_, \my %xattr, $username);
+   }
 
-   Landlord::Utils::sql_modify($query) if `userdel -r $username`;
+   $dbh->disconnect();
+
+   #Landlord::Utils::sql_modify($query) if `userdel -r $username`;
 }
 sub reset_password {
    my $username = $_[0];
-   my $newpass = generate(8);
+   my $newpass = Landlord::Utils::generate_password(8);
 
    `echo $username:$newpass | chpasswd`;
    `echo $newpass > $username`; # replace this mechanism with an email approach
