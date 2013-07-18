@@ -6,14 +6,20 @@ use warnings;
 use Landlord::Utils;
 use Landlord::User;
 use Landlord::Group;
+use Landlord::SQL_Backend;
 use feature "say";
 use Test::More;
 if ($ARGV[0]){
-   Landlord::Utils::init_db() if $ARGV[0] eq "init";
-   Landlord::Utils::refresh_database_info if $ARGV[0] eq "refresh";
+   if ($ARGV[0] eq "init" ){
+      my $ll = Landlord::SQL_Backend->new();
+      $ll->initialize();
+   }
+   elsif ($ARGV[0] eq "refresh") {
+      my $ll = Landlord::SQL_Backend->new();
+      $ll->refresh_database_info;
+   }
 }
 
-#Landlord::Utils::update_active_status(7);
 # Option specifications
 my %options_description = ("email" => qr/[\w\.]+@(?:[\w+]\.?){2,}/,
                            "name" => qr/\w+|(?:".*")/);

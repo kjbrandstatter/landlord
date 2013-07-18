@@ -4,6 +4,8 @@
 use strict;
 use warnings;
 
-use Landlord::User qw(add_user);
+#use Landlord::User qw(add_user);
+use Landlord::Landlord qw(add_user);
 
-add_user(@ARGV);
+my $ll = Landlord::Landlord->new();
+$ll->add_user(@ARGV);

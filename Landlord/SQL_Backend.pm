@@ -28,11 +28,6 @@ INSERT into group_memberships select uid,gid from
 join (select id as gid from groups where name = ?);
 END_SQL
    my $delete_group_membership = "Delete from group_memberships where user = ? AND group = ?;";
-   my $add_user =<< "END_SQL";
-INSERT INTO users
-(id, username, fullname, email, status, expire_date, home)
-VALUES (?, ?, ?, ?, 1, date('now', '+6 month'), ?);
-END_SQL
    my $delete_user =<< "END_SQL";
 INSERT INTO archives (username, email, remove_date) select username, email, expire_date from users where username = ?;
 UPDATE archives set remove_date = DATE('now') where username = ?;
@@ -293,9 +288,30 @@ END_SQL
 sub cache {
    my ($this, $query) = @_;
    if (not exists $this->stmt->{$query}){
+      print $query;
       $this->stmt->{$query} = $this->dbh->prepare($query);
    }
    return $this->stmt->{$query};
+}
+
+sub sql_transaction {
+   my ($this, $pairs) = @_;
+   my $dbh = $this->dbh;
+   $dbh->begin_work();
+   $dbh->do("PRAGMA foreign_keys=ON;");
+   while (my ($query, $args) = each %$pairs) {
+      my $sth = $this->cache($query);
+      $sth->execute(@$args);
+   }
+   $dbh->commit();
+}
+
+sub sql_request {
+   my ($this, $query, @args) = @_;
+   my $sth = $this->cache($query);
+   $sth->execute(@args);
+   my $rows = $sth->fetchall_arrayref();
+   return $rows;
 }
 
 1;

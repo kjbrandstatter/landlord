@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 # llpassreset username
 
-use Landlord::User;
+use Landlord::Landlord;
 
-Landlord::User::reset_password(@ARGV);
+
+Landlord::Landlord->new()->reset_password(@ARGV);
