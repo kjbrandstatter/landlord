@@ -152,7 +152,7 @@ sub refresh_users {
    my $query =<< "END_SQL";
 create temp table tmpuser (
 id integer primary key,
-username char(50) unique not null,
+username char(50) not null,
 fullname char(50) not null,
 email char(50),
 home char(50) not null,
@@ -213,29 +213,37 @@ END_SQL
    sql_modify($query);
 }
 sub refresh_memberships {
+   my $dbh = open_db();
+   $dbh->begin_work();
    my $query =<< "END_SQL";
 CREATE temp table tmpmemb (
 user char(50),
 gid integer,
 primary key(user,gid));
 END_SQL
+   $dbh->do($query);
+   my $insert = "INSERT INTO tmpmemb values (?, ?);";
+   my $sth = $dbh->prepare($insert);
    open(GROUPS, "</etc/group") or die "Failed to open group file";
    for (<GROUPS>) {
       chomp;
       my @fields = split ':';
       my @members = split ',', $fields[3] if $fields[3];
       for (@members) {
-         $query .= "INSERT INTO tmpmemb values ('$_', $fields[2]);";
+         $sth->execute($_, $fields[2]);
       }
    }
    close GROUPS;
-   $query .=<< "END_SQL";
-insert into group_memberships
+   $query =<< "END_SQL";
+insert or ignore into group_memberships
 select users.id, tmpmemb.gid
 from users join tmpmemb
 on users.username = tmpmemb.user;
 END_SQL
-   sql_modify($query);
+   $dbh->do($query);
+   $dbh->commit();
+   $dbh->disconnect();
+   #sql_modify($query);
 }
 1
 __END__
