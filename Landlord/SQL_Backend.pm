@@ -288,7 +288,6 @@ END_SQL
 sub cache {
    my ($this, $query) = @_;
    if (not exists $this->stmt->{$query}){
-      print $query;
       $this->stmt->{$query} = $this->dbh->prepare($query);
    }
    return $this->stmt->{$query};

@@ -200,12 +200,15 @@ sub delete_from_group {
    my ($this, $user, $group) = @_;
    die "Invalid arguments" if not $user or not $group;
    my $query =<< "END_SQL";
-Delete from group_memberships where (user_id, group_id) in
+Delete from group_memberships where user_id in (SELECT uid from
 (SELECT id as uid from users where username = ?)
-join (select id as gid from groups where name = ?);
+join (select id as gid from groups where name = ?) ) AND
+group_id in (SELECT gid from
+(SELECT id as uid from users where username = ?)
+join (select id as gid from groups where name = ?) ) ;
 END_SQL
    `gpasswd -d $user $group`;
-   $this->backend->sql_transaction({$query => [$user, $group]});
+   $this->backend->sql_transaction({$query => [$user, $group, $user, $group]});
 }
 1;
 __END__
