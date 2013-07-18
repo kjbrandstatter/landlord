@@ -34,19 +34,7 @@ my $make_group_command = qr/\Agroup (\w+)\Z/;
 my $add_to_group_command = qr/\Aput (\w+) in (\w+)\Z/;
 my $remove_from_group_command = qr/\Akick (\w+) from (\w+)\Z/;
 
-ok ('email=kevin@kjbrandstatter.com' =~ $options, "options regex test");
-ok ('email=kevin@kjbrandstatter.com name="Kevin Brandstatter"' =~ $options, "options regex test 2");
-ok ('email=kevin@kjbrandstatter.com name="Kevin Brandstatter"' =~ /(?:$options\s?){2}/, "options regex test 2");
-ok ('email=kjbrandstatter.com' !~ $options, "Test email regex");
-ok ("lease for kevin" =~ /$add_user_command/, "add user regex test no options");
-ok ('lease for kevin with email=kevin@hawk.iit.edu' =~ /$add_user_command/, "add user regex test 1");
-ok ('lease for kevin with email=kevin@hawk.iit.edu name="Kevin Brandstatter"' =~ /$add_user_command/, "add user regex test multiple options");
-ok (('lease for kevin with email=kevin@hawk.iit.edu meow' !~ /$add_user_command/), "add user regex test extra words");
-ok (('lease for kevin with email=kevin@hawk.iit.edu meow=moo' !~ /$add_user_command/), "add user regex test invalid option");
-ok ("evict kevin" =~ $delete_user_command, "delete user regex check 1");
-ok (" evict kevin" !~ $delete_user_command, "delete user regex check 2");
-done_testing();
-#exit;
+exit;
 use feature qw(switch);
 while (<>){
    chomp;

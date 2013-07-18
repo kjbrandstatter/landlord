@@ -27,6 +27,14 @@ Core:
 
    sql parameterization
 
+   Priveledge detection and escalation
+
+   Remove need for system calls to functions. Try to find some perl modules
+
+   Tests, tests, tests
+
+   db run sql abstraction function, that pre-prepares all of the necessary sql queries
+
 Actions:
  * user insert (database) - working
 

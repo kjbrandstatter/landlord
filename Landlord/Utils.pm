@@ -147,6 +147,8 @@ sub refresh_database_info {
 # They are currently inefficient, but i prefer inefficient if it guaruntees consistency
 # Ill continue to optimize to make them more efficient
 sub refresh_users {
+   my $dbh = open_db();
+   $dbh->begin_work();
    my $query =<< "END_SQL";
 create temp table tmpuser (
 id integer primary key,
@@ -157,7 +159,14 @@ home char(50) not null,
 status integer not null,
 expire_date DATE not null);
 END_SQL
+   $dbh->do($query);
    open(PASSWD, "</etc/passwd") or die "Failed to open passwd file";
+   my $insert =<< "END_SQL";
+INSERT INTO tmpuser
+(id, username, fullname, email, home, status, expire_date) VALUES
+(?, ?, ?, ?, ?, 1, date('now'));
+END_SQL
+   my $sth = $dbh->prepare($insert);
    for (<PASSWD>) {
       chomp;
       my @fields = split ":";
@@ -166,21 +175,20 @@ END_SQL
       my $email = $2 ? $2 : "";
       my $home = $fields[5];
       if ($fields[2] >= 1000 and $fields[2] < 65534) {
-         $query .=<< "END_SQL";
-INSERT INTO tmpuser
-(id, username, fullname, email, home, status, expire_date) VALUES
-($fields[2], '$fields[0]', '$name', '$email', '$home', 1, date('now'));
-END_SQL
+         $sth->execute($fields[2], $fields[0], $name, $email, $home);
       }
    }
    close PASSWD;
-   $query .=<< "END_SQL";
+   $query =<< "END_SQL";
 insert into users select * from tmpuser
 where tmpuser.id not in (select id from users);
 delete from users
 where id in (select id from users except select id from tmpuser);
 END_SQL
-   sql_modify($query);
+   $dbh->do($query);
+   $dbh->commit();
+   $dbh->disconnect();
+   #sql_modify($query);
 }
 sub refresh_groups {
    my $query =<< "END_SQL";

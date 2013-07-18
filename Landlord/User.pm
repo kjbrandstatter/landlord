@@ -82,6 +82,7 @@ END_SQL
    `userdel -r $username`;
    for (split(";", $query)) {
       say;
+      # I would prefer to use prepare/execute, but that wasn't working.
       $dbh->do($_, \my %xattr, $username);
    }
 
@@ -100,14 +101,24 @@ sub reset_password {
 
 sub expire_user {
    my ($username) = @_;
-   my $query = "update users set status = 0 where username = '$username';";
-   Landlord::Utils::sql_modify($query) if `passwd -l $username`;
+   my $query = "update users set status = 0 where username = ?;";
+   my $dbh = open_db();
+   $dbh->prepare($query);
+   $dbh->execute($username);
+   $dbh->disconnect() or die "Database operation failed $!";
+   `passwd -l $username`;
+   #Landlord::Utils::sql_modify($query) if `passwd -l $username`;
 }
 
 sub renew_user {
    my ($username) = @_;
-   my $query = "update users set status = 1 where username = '$username';";
-   Landlord::Utils::sql_modify($query) if `passwd -u $username`;
+   my $query = "update users set status = 1 where username = ?;";
+   my $dbh = open_db();
+   $dbh->prepare($query);
+   $dbh->execute($username);
+   $dbh->disconnect() or die "Database operation failed $!";
+   #Landlord::Utils::sql_modify($query) if 
+   `passwd -u $username`;
 }
 
 sub expire_inactive_users {
