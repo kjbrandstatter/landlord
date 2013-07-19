@@ -285,6 +285,23 @@ END_SQL
    $dbh->disconnect();
 }
 
+sub update_active_status {
+   my ($this, $time) = @_;
+   my @active_users;
+   open(ACTIVE, "lastlog -t $time |");
+   for (<ACTIVE>) {
+      m/^(\w+)/;
+      push @active_users, $1 if not $1 eq "Username";
+   }
+   close(ACTIVE);
+   my $active_list = join("','", @active_users);
+   my $update =<< "END_SQL";
+update users set expire_date = DATE('now', '+6 month')
+where username in ('$active_list');
+END_SQL
+   sql_transaction({$update => []});
+}
+
 sub cache {
    my ($this, $query) = @_;
    if (not exists $this->stmt->{$query}){

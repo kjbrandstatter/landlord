@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
-use Landlord::Utils;
+use Landlord;
 use strict;
 use warnings;
 
-Landlord::Utils::update_active_status($ARGV[0]);
+Landlord->new()->update_active_status($ARGV[0]);
