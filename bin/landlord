@@ -4,11 +4,11 @@ use strict;
 use warnings;
 
 use Landlord::Utils;
-use Landlord::User;
+#use Landlord::User;
 use Landlord::Group;
 use Landlord::SQL_Backend;
 use feature "say";
-use Test::More;
+#use Test::More;
 if ($ARGV[0]){
    if ($ARGV[0] eq "init" ){
       my $ll = Landlord::SQL_Backend->new();

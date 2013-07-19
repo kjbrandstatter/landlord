@@ -4,4 +4,4 @@ use Landlord::Utils;
 use strict;
 use warnings;
 
-Landlord::Utils::update_active_status();
+Landlord::Utils::update_active_status($ARGV[0]);

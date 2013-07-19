@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package Landlord::Landlord;
+package Landlord;
 use Landlord::SQL_Backend;
 use DBI;
 use feature "say";

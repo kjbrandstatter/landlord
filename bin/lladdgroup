@@ -2,6 +2,6 @@
 # lladdgroup username "full name" email [expire date]
 
 #use Landlord::Group qw(add_group);
-use Landlord::Landlord;
+use Landlord;
 
-Landlord::Landlord->new()->add_group(@ARGV);
+Landlord->new()->add_group(@ARGV);

@@ -1,7 +1,0 @@
-#!/usr/bin/perl
-# lladdgroup username "full name" email [expire date]
-
-use Landlord::Group qw(delete_from_group);
-use Landlord::Landlord;
-
-Landlord::Landlord->new()->delete_from_group(@ARGV);

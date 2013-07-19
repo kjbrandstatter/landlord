@@ -5,8 +5,8 @@
 #use File::Copy::Recursive "rcopy";
 
 #use Landlord::User qw(delete_user);
-use Landlord::Landlord;
+use Landlord;
 
-my $ll = Landlord::Landlord->new();
+my $ll = Landlord->new();
 
 $ll -> delete_user(@ARGV);

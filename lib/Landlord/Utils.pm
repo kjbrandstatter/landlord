@@ -95,6 +95,25 @@ sub open_db {
    return $dbh;
 }
 
+sub sql_transaction {
+   my (%queries) = @_;
+   my $dbh = open_db();
+   $dbh->begin_work();
+   while (my ($query, $args) = (each %queries)) {
+      custom_sql_query($dbh, $query, @$args);
+   }
+   $dbh->commit();
+   $dbh->disconnect();
+}
+
+# Run a single custom sql query, not a transaction
+sub custom_sql_query {
+   my ($dbh, $query, @args) = @_;
+   print $query . "\n";
+   my $sth = $dbh->prepare($query);
+   $sth->execute(@args);
+}
+
 # Deprecate this
 sub sql_modify {
    my ($query) = @_;
