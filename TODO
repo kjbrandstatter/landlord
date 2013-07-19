@@ -1,4 +1,6 @@
 Core:
+   Logging for debug and errors
+
  * initialize db from passwd - working (could be improved)
 
    improve the table schemas - work in progress
@@ -34,6 +36,7 @@ Core:
    Tests, tests, tests
 
    db run sql abstraction function, that pre-prepares all of the necessary sql queries
+   aggregate all queries to one location, and store prepared handles in hash
 
 Actions:
  * user insert (database) - working
