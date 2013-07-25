@@ -62,7 +62,7 @@ sub add_user {
    my $query =<< "END_SQL";
 INSERT INTO users
 (id, username, fullname, email, status, expire_date, home)
-VALUES (?, ?, ?, ?, 1, date('now', '+6 month'), ?);
+VALUES (?, ?, ?, ?, 1, date('now', '+6 months'), ?);
 END_SQL
 
    #my $sth = $backend->cache($query);
