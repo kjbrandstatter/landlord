@@ -150,7 +150,7 @@ sub update_active_status {
    close(ACTIVE);
    my $active_list = join("','", @active_users);
    my $update =<< "END_SQL";
-update users set expire_date = DATE('now', '+6 month')
+update users set expire_date = DATE('now', '+6 months')
 where username in ('$active_list');
 END_SQL
    sql_modify($update);
