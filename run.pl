@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+use feature "say";
 push @INC, "./lib";
 my $scriptname = shift @ARGV;
-do "bin/$scriptname";
+say $scriptname;
+do "bin/$scriptname" or die $!;
