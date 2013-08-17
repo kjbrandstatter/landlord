@@ -15,6 +15,14 @@ require DBI;
 #@EXPORT = qw();
 
 #@EXPORT_OK = qw();
+sub trim($)
+{
+   my $string = shift;
+   $string =~ s/^\s+//;
+   $string =~ s/\s+$//;
+   return $string;
+}
+
 
 sub new {
    my ($package) = @_;
@@ -192,6 +200,15 @@ status integer not null,
 expire_date DATE not null);
 END_SQL
    $dbh->do($query);
+   my @system;
+   open(PWD, '</etc/shadow') or die "Could not read system users";
+   for (<PWD>) {
+      chomp;
+      my @fields = split ':';
+      push @system, $fields[0] if $fields[1] =~ /\*|!/;
+   }
+   close PWD;
+
    open(PASSWD, "</etc/passwd") or die "Failed to open passwd file";
    my $insert =<< "END_SQL";
 INSERT INTO tmpuser
@@ -202,11 +219,12 @@ END_SQL
    for (<PASSWD>) {
       chomp;
       my @fields = split ":";
-      $fields[4] =~ m/(.*)(?:<(.*)>)?/;
-      my $name = $1;
+      $fields[4] =~ m/([^<]*)(?:<(.*)>)?/;
+      my $name = trim($1);
       my $email = $2 ? $2 : "";
       my $home = $fields[5];
-      if ($fields[2] >= 1000 and $fields[2] < 65534) {
+      if ($fields[2] >= 1000 and $fields[2] < 65534 and
+           not grep { /^$fields[0]$/ } @system ) {
          $sth->execute($fields[2], $fields[0], $name, $email, $home);
       }
    }
