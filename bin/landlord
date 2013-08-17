@@ -5,7 +5,6 @@ use warnings;
 
 use Landlord::Utils;
 #use Landlord::User;
-use Landlord::Group;
 use Landlord::SQL_Backend;
 use feature "say";
 #use Test::More;
@@ -40,7 +39,7 @@ my $make_group_command = qr/\Agroup (\w+)\Z/;
 my $add_to_group_command = qr/\Aput (\w+) in (\w+)\Z/;
 my $remove_from_group_command = qr/\Akick (\w+) from (\w+)\Z/;
 
-#exit;
+exit;
 use feature qw(switch);
 while (<>){
    chomp;
