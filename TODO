@@ -27,7 +27,7 @@ Core:
 
    better consistency of names in functions
 
-   sql parameterization
+ * sql parameterization
 
    Priveledge detection and escalation
 
@@ -37,6 +37,10 @@ Core:
 
    db run sql abstraction function, that pre-prepares all of the necessary sql queries
    aggregate all queries to one location, and store prepared handles in hash
+
+   Detect system accounts with uid > 1000
+
+   Refresh user function to update if manual change of user name/email occers in passwd
 
 Actions:
  * user insert (database) - working
